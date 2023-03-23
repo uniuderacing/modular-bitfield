@@ -32,6 +32,21 @@ impl PopBits for PopBuffer<u8> {
     }
 }
 
+impl Sealed for PopBuffer<i8> {}
+
+impl PopBits for PopBuffer<i8> {
+    #[inline]
+    fn pop_bits(&mut self, amount: u32) -> u8 {
+        let Self { bytes } = self;
+        let orig_ones = bytes.count_ones();
+        debug_assert!(1 <= amount && amount <= 8);
+        let res = (*bytes & ((0x01_i16.wrapping_shl(amount)).wrapping_sub(1) as i8)) as u8;
+        *bytes = bytes.checked_shr(amount).unwrap_or(0);
+        debug_assert_eq!(res.count_ones() + bytes.count_ones(), orig_ones);
+        res
+    }
+}
+
 macro_rules! impl_pop_bits {
     ( $($type:ty),+ ) => {
         $(
@@ -53,7 +68,7 @@ macro_rules! impl_pop_bits {
         )+
     };
 }
-impl_pop_bits!(u16, u32, u64, u128);
+impl_pop_bits!(u16, u32, u64, u128, i16, i32, i64, i128);
 
 /// A bit buffer that allows to push bits onto it.
 pub struct PushBuffer<T> {
@@ -94,4 +109,4 @@ macro_rules! impl_push_bits {
         )+
     }
 }
-impl_push_bits!(u8, u16, u32, u64, u128);
+impl_push_bits!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
