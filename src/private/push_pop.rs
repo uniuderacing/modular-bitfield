@@ -61,6 +61,9 @@ macro_rules! impl_pop_bits {
                     let bitmask = 0xFF >> (8 - amount);
                     let res = (*bytes & bitmask) as u8;
                     *bytes = bytes.checked_shr(amount).unwrap_or(0);
+
+                    // Re-mask bytes as Rust does an arithmetic shift instead of the logical shift we'd like.
+                    *bytes &= bitmask;
                     debug_assert_eq!(res.count_ones() + bytes.count_ones(), orig_ones);
                     res
                 }
